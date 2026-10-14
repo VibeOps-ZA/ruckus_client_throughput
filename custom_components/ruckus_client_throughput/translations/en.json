@@ -1,0 +1,53 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Ruckus controller",
+        "description": "Log in to your Ruckus Unleashed / ZoneDirector controller. If Home Assistant's own Ruckus integration is set up, the address and user are filled in and you can leave the password empty to reuse its password.",
+        "data": {
+          "host": "Controller address",
+          "username": "Username",
+          "password": "Password"
+        },
+        "data_description": {
+          "host": "IP address or host name of the Unleashed master AP (or ZoneDirector).",
+          "password": "Leave empty to reuse the password of the built-in Ruckus integration."
+        }
+      },
+      "clients": {
+        "title": "Clients to measure",
+        "description": "Pick the Wi-Fi clients (for example your TVs) that should get a throughput sensor. Only connected clients are listed; you can also type a MAC address.",
+        "data": {
+          "clients": "Clients",
+          "scan_interval": "Update interval"
+        },
+        "data_description": {
+          "clients": "One 'Wi-Fi throughput' sensor (kbit/s, download + upload) is created per client.",
+          "scan_interval": "How often (seconds) the controller is asked for the counters. 30 s is a good balance."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not log in to the controller - check the address, user and password."
+    },
+    "abort": {
+      "already_configured": "This controller is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Clients to measure",
+        "description": "Add or remove clients, or change how often the counters are read.",
+        "data": {
+          "clients": "Clients",
+          "scan_interval": "Update interval"
+        },
+        "data_description": {
+          "clients": "One 'Wi-Fi throughput' sensor per client.",
+          "scan_interval": "Seconds between reads (10-300)."
+        }
+      }
+    }
+  }
+}
