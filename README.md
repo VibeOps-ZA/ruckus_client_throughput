@@ -43,13 +43,16 @@ Copy `custom_components/ruckus_client_throughput` into your
    values and leave the password empty to reuse the built-in integration's).
 3. Pick the clients to measure. Only connected clients are listed; you can also
    type a MAC address (e.g. a TV that's off right now).
-4. Done. Each client gets a device named `<name> Ruckus` with a
-   **Wi-Fi throughput** sensor (e.g. `sensor.study_tv_ruckus_wi_fi_throughput`).
+4. Done. Each client gets a device named `<name> Ruckus` with two sensors:
+   a **Wi-Fi throughput** sensor (e.g. `sensor.study_tv_ruckus_wi_fi_throughput`)
+   and a **Wi-Fi data today** sensor.
 
 Change the clients or update interval later under **Configure** on the
 integration card.
 
-## The sensor
+## The sensors
+
+**Wi-Fi throughput** (kbit/s):
 
 | | |
 |---|---|
@@ -57,6 +60,11 @@ integration card.
 | `download_kbps` / `upload_kbps` | The two directions separately. |
 | `connected` | Whether the client is on the Wi-Fi right now (0 kbit/s when it isn't). |
 | `access_point`, `ssid`, `mac` | Where the client is connected. |
+| `counter_age_seconds` | How long ago the AP counters last moved. Up to ~60s is normal; a larger value means the client is idle or the reading is stale. |
+
+**Wi-Fi data today** (MB, `data_size`): total data the client has used since local
+midnight, as a `total_increasing` sensor, so Home Assistant also builds a per-day
+history. It resets to 0 at midnight and after the client re-associates.
 
 **Good to know:** the Ruckus access points only refresh their counters about
 **once a minute**. The sensor shows the average rate between the last two

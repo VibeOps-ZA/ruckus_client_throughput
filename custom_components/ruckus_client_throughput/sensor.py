@@ -1,8 +1,8 @@
-"""Per-client Wi-Fi throughput sensor (kbit/s, download + upload)."""
+"""Per-client sensors: live Wi-Fi throughput (kbit/s) and data used today (MB)."""
 from __future__ import annotations
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
-from homeassistant.const import UnitOfDataRate
+from homeassistant.const import UnitOfDataRate, UnitOfInformation
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -13,9 +13,12 @@ from .const import CONF_CLIENTS, DOMAIN
 async def async_setup_entry(hass, entry, async_add_entities) -> None:
     coordinator = entry.runtime_data
     macs = [m.lower() for m in entry.options.get(CONF_CLIENTS, [])]
-    async_add_entities(
-        ClientThroughputSensor(coordinator, mac, _known_name(hass, mac)) for mac in macs
-    )
+    entities = []
+    for mac in macs:
+        name = _known_name(hass, mac)
+        entities.append(ClientThroughputSensor(coordinator, mac, name))
+        entities.append(ClientDailyDataSensor(coordinator, mac, name))
+    async_add_entities(entities)
 
 
 def _known_name(hass, mac: str) -> str | None:
@@ -45,24 +48,15 @@ def _known_name(hass, mac: str) -> str | None:
     return best[1] if best else None
 
 
-class ClientThroughputSensor(CoordinatorEntity, SensorEntity):
-    """Total Wi-Fi traffic of one client (download + upload)."""
+class _ClientEntity(CoordinatorEntity, SensorEntity):
+    """Base: one device per client, carrying the client's MAC as a connection."""
 
     _attr_has_entity_name = True
-    _attr_name = "Wi-Fi throughput"
-    _attr_device_class = SensorDeviceClass.DATA_RATE
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = UnitOfDataRate.KILOBITS_PER_SECOND
-    _attr_suggested_display_precision = 0
-    _attr_icon = "mdi:wifi-arrow-up-down"
 
     def __init__(self, coordinator, mac: str, known_name: str | None) -> None:
         super().__init__(coordinator)
         self._mac = mac.lower()
-        self._attr_unique_id = f"{self._mac}_throughput"
         label = known_name or self._mac
-        # Own device per client, carrying the client's MAC as a connection so
-        # other integrations (e.g. VIDAA Eco) can match it to the same hardware.
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._mac)},
             connections={(dr.CONNECTION_NETWORK_MAC, self._mac)},
@@ -73,6 +67,21 @@ class ClientThroughputSensor(CoordinatorEntity, SensorEntity):
     @property
     def _data(self) -> dict | None:
         return (self.coordinator.data or {}).get(self._mac)
+
+
+class ClientThroughputSensor(_ClientEntity):
+    """Total Wi-Fi traffic of one client (download + upload)."""
+
+    _attr_name = "Wi-Fi throughput"
+    _attr_device_class = SensorDeviceClass.DATA_RATE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UnitOfDataRate.KILOBITS_PER_SECOND
+    _attr_suggested_display_precision = 0
+    _attr_icon = "mdi:wifi-arrow-up-down"
+
+    def __init__(self, coordinator, mac: str, known_name: str | None) -> None:
+        super().__init__(coordinator, mac, known_name)
+        self._attr_unique_id = f"{self._mac}_throughput"
 
     @property
     def native_value(self):
@@ -93,4 +102,28 @@ class ClientThroughputSensor(CoordinatorEntity, SensorEntity):
             "upload_kbps": data.get("upload_kbps"),
             "access_point": data.get("ap_name"),
             "ssid": data.get("ssid"),
+            # How long ago (seconds) the AP counters last moved. The APs refresh
+            # roughly once a minute, so a reading up to ~60s old is normal; a much
+            # larger value means the client is idle or the counters are stale.
+            "counter_age_seconds": data.get("counter_age"),
         }
+
+
+class ClientDailyDataSensor(_ClientEntity):
+    """Data used by one client so far today (resets at local midnight)."""
+
+    _attr_name = "Wi-Fi data today"
+    _attr_device_class = SensorDeviceClass.DATA_SIZE
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = UnitOfInformation.MEGABYTES
+    _attr_suggested_display_precision = 1
+    _attr_icon = "mdi:wifi-arrow-up-down"
+
+    def __init__(self, coordinator, mac: str, known_name: str | None) -> None:
+        super().__init__(coordinator, mac, known_name)
+        self._attr_unique_id = f"{self._mac}_data_today"
+
+    @property
+    def native_value(self):
+        data = self._data
+        return None if data is None else data.get("day_mb")

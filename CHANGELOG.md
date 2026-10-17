@@ -3,6 +3,18 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-10-17
+
+### Added
+- **Wi-Fi data today** sensor per client (MB, `data_size`, resets at local midnight)
+  for a per-day usage total and history.
+- `counter_age_seconds` attribute on the throughput sensor, showing how old the
+  current reading is (the APs refresh roughly once a minute).
+
+### Changed
+- Default update interval is now **60 s** (was 30 s) to match how often the access
+  points refresh their counters - same resolution, half the load on the controller.
+
 ## [0.1.0] - 2026-10-14
 
 ### Added
