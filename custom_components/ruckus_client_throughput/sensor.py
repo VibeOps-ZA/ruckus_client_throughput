@@ -1,11 +1,12 @@
 """Per-client sensors: live Wi-Fi throughput (kbit/s) and data used today (MB)."""
 from __future__ import annotations
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
+from homeassistant.components.sensor import RestoreSensor, SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.const import UnitOfDataRate, UnitOfInformation
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .const import CONF_CLIENTS, DOMAIN
 
@@ -109,8 +110,8 @@ class ClientThroughputSensor(_ClientEntity):
         }
 
 
-class ClientDailyDataSensor(_ClientEntity):
-    """Data used by one client so far today (resets at local midnight)."""
+class ClientDailyDataSensor(_ClientEntity, RestoreSensor):
+    """Data used by one client so far today (resets at local midnight; survives a Home Assistant restart)."""
 
     _attr_name = "Wi-Fi data today"
     _attr_device_class = SensorDeviceClass.DATA_SIZE
@@ -123,7 +124,31 @@ class ClientDailyDataSensor(_ClientEntity):
         super().__init__(coordinator, mac, known_name)
         self._attr_unique_id = f"{self._mac}_data_today"
 
+    async def async_added_to_hass(self) -> None:
+        """Take back the total remembered from before a restart (only if it is from today)."""
+        await super().async_added_to_hass()
+        last = await self.async_get_last_sensor_data()
+        state = await self.async_get_last_state()
+        if last is None or state is None or last.native_value in (None, "", "unknown", "unavailable"):
+            return
+        try:
+            megabytes = float(last.native_value)
+        except (TypeError, ValueError):
+            return
+        # The day this total belongs to: our own attribute, else the day the state was last written.
+        day = state.attributes.get("date") or dt_util.as_local(state.last_updated).date().isoformat()
+        self.coordinator.restore_day(self._mac, day, int(megabytes * 1_000_000))
+
     @property
     def native_value(self):
         data = self._data
-        return None if data is None else data.get("day_mb")
+        if data is not None:
+            return data.get("day_mb")
+        total = self.coordinator.day_total(self._mac)       # off the Wi-Fi right now: keep showing today's total
+        return None if total is None else total[1]
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        data = self._data
+        total = (data.get("day"), None) if data is not None else self.coordinator.day_total(self._mac)
+        return {} if total is None else {"date": total[0]}   # which day the total belongs to (for restoring)

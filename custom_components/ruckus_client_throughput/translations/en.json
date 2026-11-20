@@ -2,8 +2,30 @@
   "config": {
     "step": {
       "user": {
-        "title": "Ruckus controller",
-        "description": "Log in to your Ruckus Unleashed / ZoneDirector controller. If Home Assistant's own Ruckus integration is set up, the address and user are filled in and you can leave the password empty to reuse its password.",
+        "title": "Where do the counters come from?",
+        "description": "The access points count every byte a client sends and receives. The integration can read those counters through your Ruckus gateway (recommended: it keeps the one login to the controller for everyone), with a login of its own, or automatically: gateway first, own login only if the gateway stops answering.",
+        "data": {
+          "source": "Source"
+        },
+        "data_description": {
+          "source": "Automatic is the safe choice. 'Gateway only' never logs in to the controller; 'Own login only' is how version 0.2 worked."
+        }
+      },
+      "gateway": {
+        "title": "Ruckus gateway",
+        "description": "Address and key of the gateway's HTTP front door (read-only: it can only hand out the byte counters of Wi-Fi clients).",
+        "data": {
+          "gateway_url": "Gateway address",
+          "gateway_key": "Gateway key"
+        },
+        "data_description": {
+          "gateway_url": "Full address including the path, e.g. https://your-gateway-host/ruckus (no trailing slash needed).",
+          "gateway_key": "The secret key that belongs to the gateway's front door (RKUS_HTTP_KEY on the gateway)."
+        }
+      },
+      "direct": {
+        "title": "Ruckus controller login",
+        "description": "Log in to your Ruckus Unleashed / ZoneDirector controller. In Automatic mode this is only the fallback: leave the address empty to skip it. If Home Assistant's own Ruckus integration is set up, the address and user are filled in and you can leave the password empty to reuse its password.",
         "data": {
           "host": "Controller address",
           "username": "Username",
@@ -22,32 +44,67 @@
           "scan_interval": "Update interval"
         },
         "data_description": {
-          "clients": "One 'Wi-Fi throughput' sensor (kbit/s, download + upload) is created per client.",
-          "scan_interval": "How often (seconds) the controller is asked for the counters. 30 s is a good balance."
+          "clients": "One 'Wi-Fi throughput' sensor (kbit/s, download + upload) and one 'Wi-Fi data today' sensor are created per client.",
+          "scan_interval": "How often (seconds) the counters are read. 60 s matches how often the access points refresh them."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Sign in again",
+        "description": "The gateway key or the controller password was refused. Enter the new one (leave a field empty to keep it).",
+        "data": {
+          "gateway_key": "Gateway key",
+          "password": "Controller password"
         }
       }
     },
     "error": {
-      "cannot_connect": "Could not log in to the controller - check the address, user and password."
+      "cannot_connect": "Could not read the counters - check the address (and that the gateway or controller is reachable).",
+      "invalid_auth": "The key or password was refused.",
+      "host_required": "A controller address is needed for this source."
     },
     "abort": {
-      "already_configured": "This controller is already set up."
+      "already_configured": "This gateway or controller is already set up.",
+      "reauth_successful": "The new key or password works."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Clients to measure",
-        "description": "Add or remove clients, or change how often the counters are read.",
+        "description": "Add or remove clients, change how often the counters are read, or change where they come from.",
         "data": {
           "clients": "Clients",
-          "scan_interval": "Update interval"
+          "scan_interval": "Update interval",
+          "source": "Source"
         },
         "data_description": {
           "clients": "One 'Wi-Fi throughput' sensor per client.",
-          "scan_interval": "Seconds between reads (10-300)."
+          "scan_interval": "Seconds between reads (10-300).",
+          "source": "Automatic, gateway only, or own login only."
+        }
+      },
+      "gateway": {
+        "title": "Ruckus gateway",
+        "description": "Leave the key empty to keep the stored one.",
+        "data": {
+          "gateway_url": "Gateway address",
+          "gateway_key": "Gateway key"
+        }
+      },
+      "direct": {
+        "title": "Ruckus controller login",
+        "description": "In Automatic mode this is only the fallback: empty the address to remove it. Leave the password empty to keep the stored one.",
+        "data": {
+          "host": "Controller address",
+          "username": "Username",
+          "password": "Password"
         }
       }
+    },
+    "error": {
+      "cannot_connect": "Could not read the counters - check the address (and that the gateway or controller is reachable).",
+      "invalid_auth": "The key or password was refused.",
+      "host_required": "A controller address is needed for this source."
     }
   }
 }
