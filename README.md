@@ -12,7 +12,7 @@ A small Home Assistant integration that turns the traffic counters of a
 1. [Why?](#why)
 2. [What you need](#what-you-need)
 3. [Where the numbers come from: gateway or own login](#where-the-numbers-come-from-gateway-or-own-login)
-4. [Install](#install)
+4. [Install](#install) (HACS, manual, or the private-repository route)
 5. [Set up, step by step](#set-up-step-by-step)
 6. [Every option explained](#every-option-explained)
 7. [The sensors](#the-sensors)
@@ -64,7 +64,7 @@ of locking out other tools. The gateway shares one session between everything.
 3. Open **Ruckus Client Throughput** in HACS and click **Download**.
 4. **Restart Home Assistant** (Settings -> System -> top-right power icon -> Restart Home Assistant).
 
-### Manual (also works for private repositories)
+### Manual (public repositories or a downloaded copy)
 
 1. Download the repository (green **Code** button -> *Download ZIP*) or copy the folder.
 2. Copy the folder `custom_components/ruckus_client_throughput` into the `custom_components` folder inside your
@@ -72,6 +72,44 @@ of locking out other tools. The gateway shares one session between everything.
    it does not exist. Guide: [Home Assistant configuration folder](https://www.home-assistant.io/docs/configuration/).
 3. **Restart Home Assistant.** Integration code is only loaded at start, so a restart is needed after every
    install or update.
+
+### Private repository: install or update by copying the folder (how the owner does it)
+
+This repository is **private**. [HACS](https://hacs.xyz/docs/use/) can *track* a private repository (it shows that a
+new version exists) but **cannot download** it: its downloads use anonymous GitHub addresses, which answer "404" for
+a private repository. "Download ZIP" and release links also need a GitHub login. So install by copying the integration
+folder onto Home Assistant yourself. Never switch the repository to public just to make HACS work.
+
+1. **Make a backup first:** **Settings -> System -> Backups** ([Home Assistant backup docs](https://www.home-assistant.io/integrations/backup/)).
+2. **Get the code** on a computer you trust that has access to the `VibeOps-ZA` GitHub account. The version running at the
+   owner's home is the branch `feature/gateway-source`:
+   ```bash
+   git clone --branch feature/gateway-source https://github.com/VibeOps-ZA/ruckus_client_throughput.git
+   ```
+   GitHub asks for a user name and a **personal access token** as the password (a token with read-only access to this
+   repository is enough; [how to create one](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)).
+   Never paste the token into a file in this repository.
+3. **Make Home Assistant reachable over SSH** (a command-line login) with the
+   [Advanced SSH & Web Terminal app](https://github.com/hassio-addons/addon-ssh) (add it from the app store and give it
+   your public key in its configuration), or the operating system's own SSH described in the
+   [Home Assistant developer docs](https://developers.home-assistant.io/docs/operating-system/debugging/).
+   In the commands below replace `HA_USER` and `HA_HOST` with your SSH user and Home Assistant's address.
+4. **Copy the folder** (the old copy is removed first so deleted files do not linger; check the path twice, the
+   `rm` removes only this one integration's folder):
+   ```bash
+   ssh HA_USER@HA_HOST 'rm -rf /config/custom_components/ruckus_client_throughput'
+   scp -r ruckus_client_throughput/custom_components/ruckus_client_throughput HA_USER@HA_HOST:/config/custom_components/
+   ```
+   `/config` is Home Assistant's configuration folder (the one containing `configuration.yaml`). Your devices,
+   entities and settings are stored inside Home Assistant, not in this folder, so nothing is lost.
+5. **Restart Home Assistant** (**Settings -> System -> power icon -> Restart Home Assistant**). Home Assistant loads
+   integration code only when it starts, so a restart is needed after every install or update.
+6. **Check the version:** open `/config/custom_components/ruckus_client_throughput/manifest.json` (`"version": "0.3.0"` for this
+   release) or look under **Settings -> Devices & services**.
+
+**At the owner's home** steps 2-4 are run from the AI Pi host (`ai-pi`), which already holds the GitHub token and the SSH
+access to Home Assistant, so nothing secret is typed or stored in this repository. Changes are made on a branch,
+installed from it for testing, and merged to `main` only after the owner's OK.
 
 ## Set up, step by step
 

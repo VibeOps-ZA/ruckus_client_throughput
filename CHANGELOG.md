@@ -3,6 +3,12 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Docs - 2026-11-20 (docs pass, no code change)
+- README: new "Private repository: install or update by copying the folder" section (HACS can track but not download a
+  private repository; step-by-step copy over SSH with links to the official Home Assistant, HACS and SSH-app docs).
+
 ## [0.3.0] - 2026-11-20
 
 ### Added
