@@ -5,6 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Midnight reset ran in a worker thread (the time-change callback was a plain function), so Home Assistant
+  logged "calls async_write_ha_state from a thread other than the event loop" every midnight and warned it may
+  corrupt data. The callback is now marked `@callback` and runs in the event loop.
+
 ## [0.3.0] - 2026-11-20
 
 ### Docs - 2026-11-20 (docs pass, no code change)

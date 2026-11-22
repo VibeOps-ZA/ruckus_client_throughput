@@ -5,7 +5,7 @@ import logging
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -55,6 +55,7 @@ class ThroughputCoordinator(DataUpdateCoordinator[dict[str, dict]]):
             return None
         return d["day"], self._tracker.day_mb(mac.lower(), today)
 
+    @callback
     def midnight(self, _now=None) -> None:
         """Local midnight: every client's daily total starts again at 0, without waiting for the next poll."""
         self._tracker.roll_day(dt_util.now().date().isoformat())
