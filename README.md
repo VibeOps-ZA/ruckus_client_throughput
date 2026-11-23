@@ -104,7 +104,7 @@ folder onto Home Assistant yourself. Never switch the repository to public just 
    entities and settings are stored inside Home Assistant, not in this folder, so nothing is lost.
 5. **Restart Home Assistant** (**Settings -> System -> power icon -> Restart Home Assistant**). Home Assistant loads
    integration code only when it starts, so a restart is needed after every install or update.
-6. **Check the version:** open `/config/custom_components/ruckus_client_throughput/manifest.json` (`"version": "0.3.0"` for this
+6. **Check the version:** open `/config/custom_components/ruckus_client_throughput/manifest.json` (`"version": "0.3.1"` for this
    release) or look under **Settings -> Devices & services**.
 
 **At the owner's home** steps 2-4 are run from the AI Pi host (`ai-pi`), which already holds the GitHub token and the SSH
